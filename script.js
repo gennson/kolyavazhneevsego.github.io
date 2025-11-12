@@ -4,8 +4,80 @@ document.addEventListener('DOMContentLoaded', function() {
     initSmoothScrolling();
     initScrollAnimations();
     initNavHighlight();
-    initMusicCarousel(); // ДОБАВЛЯЕМ ВЫЗОВ КАРУСЕЛИ
+    initMobileNavigation();
+    initMusicPlayer();
 });
+
+// Мобильная навигация
+function initMobileNavigation() {
+    const nav = document.querySelector('.main-nav');
+    const navLinks = document.querySelector('.nav-links');
+    
+    // Создаем кнопку меню для мобильных
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'mobile-menu-btn';
+    menuBtn.innerHTML = '☰';
+    menuBtn.style.cssText = `
+        display: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #000000;
+        z-index: 1001;
+    `;
+    
+    nav.insertBefore(menuBtn, navLinks);
+    
+    // Стили для мобильного меню
+    const mobileMenuStyles = document.createElement('style');
+    mobileMenuStyles.textContent = `
+        @media (max-width: 767px) {
+            .mobile-menu-btn {
+                display: block !important;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                background: #ffffff;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 2rem;
+                transform: translateY(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+            }
+            
+            .nav-links.active {
+                transform: translateY(0);
+            }
+            
+            .nav-link {
+                font-size: 1.2rem;
+            }
+        }
+    `;
+    document.head.appendChild(mobileMenuStyles);
+    
+    // Переключение меню
+    menuBtn.addEventListener('click', function() {
+        navLinks.classList.toggle('active');
+        menuBtn.textContent = navLinks.classList.contains('active') ? '✕' : '☰';
+    });
+    
+    // Закрытие меню при клике на ссылку
+    navLinks.addEventListener('click', function(e) {
+        if (e.target.classList.contains('nav-link')) {
+            navLinks.classList.remove('active');
+            menuBtn.textContent = '☰';
+        }
+    });
+}
 
 // Плавный скролл к секциям
 function initSmoothScrolling() {
@@ -82,20 +154,7 @@ function initNavHighlight() {
     });
 }
 
-// Добавляем стиль для активной ссылки
-const activeNavStyle = document.createElement('style');
-activeNavStyle.textContent = `
-    .nav-link.active {
-        opacity: 1;
-    }
-    
-    .nav-link.active::after {
-        width: 100%;
-    }
-`;
-document.head.appendChild(activeNavStyle);
-
-// Аудио-плеер - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// Аудио-плеер
 function initMusicPlayer() {
     console.log('🎵 Инициализация аудио-плеера...');
     
@@ -125,52 +184,39 @@ function initMusicPlayer() {
         duration: item.querySelector('.track-duration').textContent
     }));
     
+    // Функция загрузки трека
     function loadTrack(index, autoPlay = false) {
-    if (index < 0 || index >= tracks.length) return;
-    
-    currentTrackIndex = index;
-    const track = tracks[index];
-    
-    // Пауза текущего трека
-    audio.pause();
-    isPlaying = false;
-    updatePlayButton();
-    
-    // ЗАМЕНИ ЭТУ ЧАСТЬ:
-    // Загрузка нового трека с обработкой CORS
-    audio.crossOrigin = "anonymous"; // Добавляем CORS
-    audio.src = track.src;
-    
-    // Добавляем обработчики ошибок
-    audio.addEventListener('error', function(e) {
-        console.error('❌ Ошибка загрузки аудио:', e);
-        console.error('Файл:', track.src);
-        alert('Ошибка загрузки аудио. Проверьте консоль для деталей.');
-    });
-    
-    audio.addEventListener('canplaythrough', function() {
-        console.log('✅ Аудио готово к воспроизведению:', track.title);
-    });
-    
-    trackTitle.textContent = track.title;
-    trackArtist.textContent = track.artist;
-    timeTotal.textContent = track.duration;
-    
-    // Обновляем активный класс
-    trackItems.forEach(item => item.classList.remove('active'));
-    track.element.classList.add('active');
-    
-    // Сбрасываем прогресс
-    progressFill.style.width = '0%';
-    timeCurrent.textContent = '0:00';
-    
-    // Автовоспроизведение если нужно
-    if (autoPlay) {
-        playTrack();
+        if (index < 0 || index >= tracks.length) return;
+        
+        currentTrackIndex = index;
+        const track = tracks[index];
+        
+        // Пауза текущего трека
+        audio.pause();
+        isPlaying = false;
+        updatePlayButton();
+        
+        // Загрузка нового трека
+        audio.src = track.src;
+        trackTitle.textContent = track.title;
+        trackArtist.textContent = track.artist;
+        timeTotal.textContent = track.duration;
+        
+        // Обновляем активный класс
+        trackItems.forEach(item => item.classList.remove('active'));
+        track.element.classList.add('active');
+        
+        // Сбрасываем прогресс
+        progressFill.style.width = '0%';
+        timeCurrent.textContent = '0:00';
+        
+        // Автовоспроизведение если нужно
+        if (autoPlay) {
+            playTrack();
+        }
+        
+        console.log('🎵 Загружен трек:', track.title);
     }
-    
-    console.log('🎵 Загружен трек:', track.title, 'Путь:', track.src);
-}
     
     // Функция воспроизведения трека
     function playTrack() {
@@ -219,13 +265,13 @@ function initMusicPlayer() {
     // Следующий трек
     function nextTrack() {
         const nextIndex = (currentTrackIndex + 1) % tracks.length;
-        loadTrack(nextIndex, true); // autoPlay = true
+        loadTrack(nextIndex, true);
     }
     
     // Предыдущий трек
     function prevTrack() {
         const prevIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
-        loadTrack(prevIndex, true); // autoPlay = true
+        loadTrack(prevIndex, true);
     }
     
     // Обновление прогресса
@@ -264,14 +310,12 @@ function initMusicPlayer() {
     prevBtn.addEventListener('click', prevTrack);
     progressBar.addEventListener('click', setProgress);
     
-    // Клик по треку в плейлисте - ТЕПЕРЬ С АВТОВОСПРОИЗВЕДЕНИЕМ
+    // Клик по треку в плейлисте
     trackItems.forEach((item, index) => {
         item.addEventListener('click', () => {
-            // Если кликаем на текущий трек - toggle play/pause
             if (index === currentTrackIndex) {
                 togglePlay();
             } else {
-                // Если кликаем на другой трек - загружаем и сразу воспроизводим
                 loadTrack(index, true);
             }
         });
@@ -281,16 +325,10 @@ function initMusicPlayer() {
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', nextTrack);
     
-    // Загрузка первого трека (без автовоспроизведения)
+    // Загрузка первого трека
     if (tracks.length > 0) {
         loadTrack(0, false);
     }
     
     console.log('✅ Аудио-плеер готов! Треков:', tracks.length);
 }
-
-// Добавь вызов в DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
-    initMusicPlayer();
-});
-
