@@ -176,52 +176,65 @@ function initMusicPlayer() {
     const trackArtist = document.querySelector('.track-artist');
     const trackItems = document.querySelectorAll('.track-item');
     
-    // Инициализация треков
-    tracks = Array.from(trackItems).map((item, index) => ({
-        element: item,
-        src: item.getAttribute('data-src'),
-        title: item.querySelector('.track-title').textContent,
-        artist: item.querySelector('.track-artist').textContent,
-        duration: item.querySelector('.track-duration').textContent
-    }));
+    // Сначала попробуем загрузить реальные файлы
+    tracks = Array.from(trackItems).map((item, index) => {
+        const src = item.getAttribute('data-src');
+        const title = item.querySelector('.track-title').textContent;
+        const artist = item.querySelector('.track-artist').textContent;
+        const duration = item.querySelector('.track-duration').textContent;
+        
+        return {
+            element: item,
+            src: src,
+            title: title,
+            artist: artist,
+            duration: duration
+        };
+    });
     
-    // Отметка пользовательского взаимодействия
-    function markUserInteraction() {
-        isUserInteracted = true;
-        document.removeEventListener('click', markUserInteraction);
-        document.removeEventListener('touchstart', markUserInteraction);
+    // Функция проверки доступности файла
+    function checkFileAvailability(src, callback) {
+        fetch(src, { method: 'HEAD' })
+            .then(response => callback(response.ok))
+            .catch(() => callback(false));
     }
     
-    document.addEventListener('click', markUserInteraction);
-    document.addEventListener('touchstart', markUserInteraction);
+    // Проверим все файлы при загрузке
+    tracks.forEach((track, index) => {
+        checkFileAvailability(track.src, (isAvailable) => {
+            if (!isAvailable) {
+                console.log(`❌ Файл недоступен: ${track.src}`);
+                // Можно добавить демо-трек если файл недоступен
+                track.src = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(index % 3) + 1}.mp3`;
+                track.title = track.title + ' (демо)';
+            } else {
+                console.log(`✅ Файл доступен: ${track.src}`);
+            }
+        });
+    });
     
-    // Функция загрузки трека
+    // Остальной код функции без изменений...
     function loadTrack(index, autoPlay = false) {
         if (index < 0 || index >= tracks.length) return;
         
         currentTrackIndex = index;
         const track = tracks[index];
         
-        // Пауза текущего трека
         audio.pause();
         isPlaying = false;
         updatePlayButton();
         
-        // Загрузка нового трека
         audio.src = track.src;
         trackTitle.textContent = track.title;
         trackArtist.textContent = track.artist;
         timeTotal.textContent = track.duration;
         
-        // Обновляем активный класс
         trackItems.forEach(item => item.classList.remove('active'));
         track.element.classList.add('active');
         
-        // Сбрасываем прогресс
         progressFill.style.width = '0%';
         timeCurrent.textContent = '0:00';
         
-        // Автовоспроизведение только после пользовательского взаимодействия
         if (autoPlay && isUserInteracted) {
             playTrack();
         }
@@ -229,7 +242,6 @@ function initMusicPlayer() {
         console.log('🎵 Загружен трек:', track.title, 'Src:', track.src);
     }
     
-    // Функция воспроизведения трека
     function playTrack() {
         const playPromise = audio.play();
         
@@ -237,24 +249,18 @@ function initMusicPlayer() {
             playPromise.then(() => {
                 isPlaying = true;
                 updatePlayButton();
-                console.log('▶️ Воспроизведение:', tracks[currentTrackIndex].title);
             }).catch(e => {
-                console.log('❌ Ошибка автоплея, требуется пользовательское взаимодействие:', e);
-                // Показываем сообщение для пользователя
-                showPlaybackHint();
+                console.log('❌ Ошибка автоплея:', e);
             });
         }
     }
     
-    // Функция паузы
     function pauseTrack() {
         audio.pause();
         isPlaying = false;
         updatePlayButton();
-        console.log('⏸️ Пауза');
     }
     
-    // Функция воспроизведения/паузы
     function togglePlay() {
         if (isPlaying) {
             pauseTrack();
@@ -263,7 +269,6 @@ function initMusicPlayer() {
         }
     }
     
-    // Обновление кнопки play/pause
     function updatePlayButton() {
         const playIcon = document.querySelector('.play-icon');
         const pauseIcon = document.querySelector('.pause-icon');
@@ -277,38 +282,31 @@ function initMusicPlayer() {
         }
     }
     
-    // Следующий трек
     function nextTrack() {
         const nextIndex = (currentTrackIndex + 1) % tracks.length;
         loadTrack(nextIndex, true);
     }
     
-    // Предыдущий трек
     function prevTrack() {
         const prevIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
         loadTrack(prevIndex, true);
     }
     
-    // Обновление прогресса
     function updateProgress() {
         const { currentTime, duration } = audio;
         if (duration) {
             const progressPercent = (currentTime / duration) * 100;
             progressFill.style.width = `${progressPercent}%`;
-            
-            // Обновление времени
             timeCurrent.textContent = formatTime(currentTime);
         }
     }
     
-    // Форматирование времени
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
     
-    // Перемотка по клику на прогресс-бар
     function setProgress(e) {
         const width = this.clientWidth;
         const clickX = e.offsetX;
@@ -319,47 +317,11 @@ function initMusicPlayer() {
         }
     }
     
-    // Показать подсказку о воспроизведении
-    function showPlaybackHint() {
-        // Создаем временное сообщение
-        const hint = document.createElement('div');
-        hint.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            z-index: 10000;
-            font-family: 'Radiotechnika', monospace;
-            text-align: center;
-            max-width: 300px;
-        `;
-        hint.textContent = 'Нажмите на кнопку воспроизведения для запуска музыки';
-        
-        document.body.appendChild(hint);
-        
-        setTimeout(() => {
-            document.body.removeChild(hint);
-        }, 3000);
-    }
-    
-    // Обработка ошибок загрузки аудио
+    // Обработка ошибок
     audio.addEventListener('error', function(e) {
         console.error('❌ Ошибка загрузки аудио:', e);
-        console.error('Путь к файлу:', audio.src);
-        
-        // Показываем сообщение об ошибке
         trackTitle.textContent = 'Ошибка загрузки';
-        trackArtist.textContent = 'Проверьте пути к файлам';
-        
-        // Показываем подсказку в консоли
-        console.log('💡 Подсказка: Убедитесь, что:');
-        console.log('1. Аудиофайлы загружены в репозиторий');
-        console.log('2. Имена файлов совпадают с указанными в data-src');
-        console.log('3. Файлы находятся в корневой папке (не в папке audio/)');
+        trackArtist.textContent = 'Проверьте файлы на GitHub';
     });
     
     // События
@@ -380,7 +342,6 @@ function initMusicPlayer() {
     
     progressBar.addEventListener('click', setProgress);
     
-    // Клик по треку в плейлисте
     trackItems.forEach((item, index) => {
         item.addEventListener('click', function() {
             isUserInteracted = true;
@@ -392,18 +353,13 @@ function initMusicPlayer() {
         });
     });
     
-    // События аудио
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', nextTrack);
-    audio.addEventListener('canplaythrough', function() {
-        console.log('✅ Аудио готово к воспроизведению:', audio.src);
-    });
     
-    // Загрузка первого трека (без автовоспроизведения)
+    // Загрузка первого трека
     if (tracks.length > 0) {
         loadTrack(0, false);
     }
     
     console.log('✅ Аудио-плеер готов! Треков:', tracks.length);
-    console.log('💡 Для воспроизведения требуется клик пользователя');
 }
