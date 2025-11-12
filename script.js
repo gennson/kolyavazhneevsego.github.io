@@ -154,7 +154,7 @@ function initNavHighlight() {
     });
 }
 
-// Аудио-плеер
+// Аудио-плеер с улучшенной обработкой ошибок
 function initMusicPlayer() {
     console.log('🎵 Инициализация аудио-плеера...');
     
@@ -162,6 +162,7 @@ function initMusicPlayer() {
     let currentTrackIndex = 0;
     let isPlaying = false;
     let tracks = [];
+    let isUserInteracted = false;
     
     // Элементы DOM
     const playBtn = document.querySelector('.play-btn');
@@ -183,6 +184,16 @@ function initMusicPlayer() {
         artist: item.querySelector('.track-artist').textContent,
         duration: item.querySelector('.track-duration').textContent
     }));
+    
+    // Отметка пользовательского взаимодействия
+    function markUserInteraction() {
+        isUserInteracted = true;
+        document.removeEventListener('click', markUserInteraction);
+        document.removeEventListener('touchstart', markUserInteraction);
+    }
+    
+    document.addEventListener('click', markUserInteraction);
+    document.addEventListener('touchstart', markUserInteraction);
     
     // Функция загрузки трека
     function loadTrack(index, autoPlay = false) {
@@ -210,25 +221,29 @@ function initMusicPlayer() {
         progressFill.style.width = '0%';
         timeCurrent.textContent = '0:00';
         
-        // Автовоспроизведение если нужно
-        if (autoPlay) {
+        // Автовоспроизведение только после пользовательского взаимодействия
+        if (autoPlay && isUserInteracted) {
             playTrack();
         }
         
-        console.log('🎵 Загружен трек:', track.title);
+        console.log('🎵 Загружен трек:', track.title, 'Src:', track.src);
     }
     
     // Функция воспроизведения трека
     function playTrack() {
-        audio.play().then(() => {
-            isPlaying = true;
-            updatePlayButton();
-            console.log('▶️ Воспроизведение:', tracks[currentTrackIndex].title);
-        }).catch(e => {
-            console.log('❌ Ошибка воспроизведения:', e);
-            // Заглушка для демо
-            alert('Для работы плеера нужны аудиофайлы. Добавьте файлы в папку audio/');
-        });
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                isPlaying = true;
+                updatePlayButton();
+                console.log('▶️ Воспроизведение:', tracks[currentTrackIndex].title);
+            }).catch(e => {
+                console.log('❌ Ошибка автоплея, требуется пользовательское взаимодействие:', e);
+                // Показываем сообщение для пользователя
+                showPlaybackHint();
+            });
+        }
     }
     
     // Функция паузы
@@ -304,15 +319,71 @@ function initMusicPlayer() {
         }
     }
     
+    // Показать подсказку о воспроизведении
+    function showPlaybackHint() {
+        // Создаем временное сообщение
+        const hint = document.createElement('div');
+        hint.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            z-index: 10000;
+            font-family: 'Radiotechnika', monospace;
+            text-align: center;
+            max-width: 300px;
+        `;
+        hint.textContent = 'Нажмите на кнопку воспроизведения для запуска музыки';
+        
+        document.body.appendChild(hint);
+        
+        setTimeout(() => {
+            document.body.removeChild(hint);
+        }, 3000);
+    }
+    
+    // Обработка ошибок загрузки аудио
+    audio.addEventListener('error', function(e) {
+        console.error('❌ Ошибка загрузки аудио:', e);
+        console.error('Путь к файлу:', audio.src);
+        
+        // Показываем сообщение об ошибке
+        trackTitle.textContent = 'Ошибка загрузки';
+        trackArtist.textContent = 'Проверьте пути к файлам';
+        
+        // Показываем подсказку в консоли
+        console.log('💡 Подсказка: Убедитесь, что:');
+        console.log('1. Аудиофайлы загружены в репозиторий');
+        console.log('2. Имена файлов совпадают с указанными в data-src');
+        console.log('3. Файлы находятся в корневой папке (не в папке audio/)');
+    });
+    
     // События
-    playBtn.addEventListener('click', togglePlay);
-    nextBtn.addEventListener('click', nextTrack);
-    prevBtn.addEventListener('click', prevTrack);
+    playBtn.addEventListener('click', function() {
+        isUserInteracted = true;
+        togglePlay();
+    });
+    
+    nextBtn.addEventListener('click', function() {
+        isUserInteracted = true;
+        nextTrack();
+    });
+    
+    prevBtn.addEventListener('click', function() {
+        isUserInteracted = true;
+        prevTrack();
+    });
+    
     progressBar.addEventListener('click', setProgress);
     
     // Клик по треку в плейлисте
     trackItems.forEach((item, index) => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', function() {
+            isUserInteracted = true;
             if (index === currentTrackIndex) {
                 togglePlay();
             } else {
@@ -324,11 +395,15 @@ function initMusicPlayer() {
     // События аудио
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', nextTrack);
+    audio.addEventListener('canplaythrough', function() {
+        console.log('✅ Аудио готово к воспроизведению:', audio.src);
+    });
     
-    // Загрузка первого трека
+    // Загрузка первого трека (без автовоспроизведения)
     if (tracks.length > 0) {
         loadTrack(0, false);
     }
     
     console.log('✅ Аудио-плеер готов! Треков:', tracks.length);
+    console.log('💡 Для воспроизведения требуется клик пользователя');
 }
