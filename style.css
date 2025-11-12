@@ -946,3 +946,293 @@ section.visible {
     }
 }
 
+/* ===== УЛУЧШЕННАЯ МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
+
+@media (max-width: 768px) {
+    /* Улучшаем шрифты для мобильных */
+    body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    /* Hero секция */
+    .hero-section .logo {
+        font-size: 3rem;
+        font-family: 'Blue April', 'Helvetica Neue', sans-serif;
+    }
+    
+    .main-title {
+        font-size: 2.2rem;
+        font-family: 'Blue April', 'Helvetica Neue', sans-serif;
+        line-height: 1.2;
+    }
+    
+    .hero-tagline {
+        font-size: 1.1rem;
+        font-family: 'Blue April', 'Helvetica Neue', sans-serif;
+    }
+    
+    /* Навигация */
+    .main-nav {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+    }
+    
+    .nav-logo {
+        font-size: 1.3rem;
+        font-family: 'Blue April', 'Helvetica Neue', sans-serif;
+    }
+    
+    .nav-links {
+        gap: 1rem;
+    }
+    
+    .nav-link {
+        font-size: 0.9rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    /* Секции */
+    .section-title {
+        font-size: 2.2rem;
+        font-family: 'Blue April', 'Helvetica Neue', sans-serif;
+        margin-bottom: 2rem;
+    }
+    
+    section {
+        padding: 3rem 0;
+    }
+    
+    /* Описание */
+    .description-content p {
+        font-size: 1.1rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        text-transform: none; /* Убираем uppercase для читабельности */
+    }
+    
+    /* Проекты - Pinterest стиль */
+    .projects-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .films-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .column {
+        padding: 1.5rem;
+    }
+    
+    .column-title {
+        font-size: 1.1rem;
+        font-family: 'Blue April', 'Helvetica Neue', sans-serif;
+    }
+    
+    .project-item {
+        font-size: 0.9rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        padding: 0.6rem 0.8rem;
+        text-transform: none; /* Убираем uppercase для мобильных */
+    }
+    
+    /* Артисты */
+    .artist-list {
+        font-size: 0.9rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        padding: 1.5rem;
+        text-transform: none; /* Убираем uppercase для мобильных */
+        line-height: 1.6;
+    }
+    
+    /* Аудио-плеер */
+    .music-player {
+        margin: 0 0.5rem;
+    }
+    
+    .player-main {
+        padding: 1.5rem 1rem;
+    }
+    
+    .now-playing {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .track-title {
+        font-size: 1.1rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        text-transform: none;
+    }
+    
+    .track-artist {
+        font-size: 0.9rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    .player-controls {
+        gap: 0.8rem;
+    }
+    
+    .play-btn {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .track-item {
+        padding: 0.8rem 1rem;
+        gap: 0.8rem;
+    }
+    
+    .track-info-small .track-title {
+        font-size: 0.8rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        text-transform: none;
+    }
+    
+    .track-info-small .track-artist {
+        font-size: 0.7rem;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    .progress-container {
+        gap: 0.5rem;
+    }
+    
+    .time-current,
+    .time-total {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-section .logo {
+        font-size: 2.5rem;
+    }
+    
+    .main-title {
+        font-size: 1.8rem;
+    }
+    
+    .section-title {
+        font-size: 1.8rem;
+    }
+    
+    .project-title {
+        font-size: 1.8rem;
+    }
+    
+    /* Навигация для очень маленьких экранов */
+    .nav-links {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+    
+    .nav-link {
+        font-size: 0.8rem;
+    }
+    
+    /* Улучшаем отступы */
+    .section-container {
+        padding: 0 1rem;
+    }
+    
+    .column {
+        padding: 1rem;
+    }
+    
+    /* Аудио-плеер для маленьких экранов */
+    .track-item {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .track-number {
+        min-width: 25px;
+        font-size: 0.7rem;
+    }
+    
+    .track-duration {
+        font-size: 0.7rem;
+    }
+}
+
+/* ===== ФОЛБЭК ДЛЯ ШРИФТОВ ===== */
+
+/* Если кастомные шрифты не загрузятся */
+@font-face {
+    font-family: 'Radiotechnika';
+    src: url('fonts/Radiotechnika.otf') format('opentype'),
+         url('fonts/Radiotechnika.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Blue April';
+    src: url('fonts/BlueApril.otf') format('opentype'),
+         url('fonts/BlueApril.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Фолбэки для случаев когда шрифты не загрузились */
+.hero-section .logo,
+.main-title,
+.hero-tagline,
+.section-title,
+.project-title,
+.column-title,
+.playlist-header h3 {
+    font-family: 'Blue April', 'Georgia', 'Times New Roman', serif;
+}
+
+.nav-logo,
+.nav-link,
+.description-content p,
+.project-item,
+.artist-list,
+.track-title,
+.track-artist,
+.time-current,
+.time-total,
+.track-number,
+.track-duration,
+.track-count {
+    font-family: 'Radiotechnika', 'Courier New', monospace, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Базовый фолбэк для всего body */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ===== УЛУЧШЕНИЯ ДЛЯ ПРОИГРЫВАТЕЛЯ НА МОБИЛЬНЫХ ===== */
+
+/* Предотвращаем увеличение при касании на iOS */
+.control-btn,
+.track-item,
+.project-item {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Улучшаем доступность для сенсорных экранов */
+@media (hover: none) and (pointer: coarse) {
+    .project-item:hover,
+    .track-item:hover,
+    .control-btn:hover {
+        transform: none;
+        background: transparent;
+    }
+    
+    .project-item:active,
+    .track-item:active,
+    .control-btn:active {
+        background: #000000;
+        color: #ffffff;
+        transform: scale(0.98);
+    }
+}
