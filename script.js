@@ -1,16 +1,13 @@
-// Плавная навигация и анимации
+// ЗАМЕНИ весь файл script.js на этот код:
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация
     initSmoothScrolling();
     initScrollAnimations();
     initNavHighlight();
     initMusicPlayer();
-    
-    // Добавляем класс для определения мобильных устройств
     detectMobile();
 });
 
-// Определение мобильных устройств
 function detectMobile() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (isMobile) {
@@ -18,7 +15,6 @@ function detectMobile() {
     }
 }
 
-// Плавный скролл к секциям
 function initSmoothScrolling() {
     const navLinks = document.querySelectorAll('.nav-link');
     
@@ -36,20 +32,11 @@ function initSmoothScrolling() {
                     top: offsetTop,
                     behavior: 'smooth'
                 });
-                
-                // Закрываем меню на мобильных (если будет добавлено)
-                if (window.innerWidth <= 768) {
-                    const nav = document.querySelector('.nav-links');
-                    if (nav.classList.contains('active')) {
-                        nav.classList.remove('active');
-                    }
-                }
             }
         });
     });
 }
 
-// Анимации при скролле
 function initScrollAnimations() {
     const observerOptions = {
         threshold: 0.1,
@@ -75,7 +62,6 @@ function initScrollAnimations() {
     });
 }
 
-// Подсветка активного раздела в навигации
 function initNavHighlight() {
     const sections = document.querySelectorAll('section');
     const navLinks = document.querySelectorAll('.nav-link');
@@ -101,9 +87,9 @@ function initNavHighlight() {
     });
 }
 
-// Аудио-плеер
+// АУДИОПЛЕЕР ДЛЯ YADI.SK ССЫЛОК
 function initMusicPlayer() {
-    console.log('🎵 Инициализация аудио-плеера...');
+    console.log('🎵 Инициализация аудио-плеера для yadi.sk...');
     
     const audio = new Audio();
     let currentTrackIndex = 0;
@@ -138,6 +124,12 @@ function initMusicPlayer() {
         currentTrackIndex = index;
         const track = tracks[index];
         
+        console.log('🔄 Загрузка трека:', track.title);
+        console.log('📁 URL:', track.src);
+        
+        // Показываем индикатор загрузки
+        showLoadingState(true);
+        
         // Пауза текущего трека
         audio.pause();
         isPlaying = false;
@@ -145,6 +137,10 @@ function initMusicPlayer() {
         
         // Загрузка нового трека
         audio.src = track.src;
+        
+        // Добавляем CORS атрибут для внешних ресурсов
+        audio.crossOrigin = "anonymous";
+        
         trackTitle.textContent = track.title;
         trackArtist.textContent = track.artist;
         timeTotal.textContent = track.duration;
@@ -157,27 +153,68 @@ function initMusicPlayer() {
         progressFill.style.width = '0%';
         timeCurrent.textContent = '0:00';
         
-        // Автовоспроизведение если нужно
-        if (autoPlay) {
-            playTrack();
-        }
+        // Предзагрузка трека
+        audio.preload = 'auto';
         
-        console.log('🎵 Загружен трек:', track.title);
+        // Обработчики для загрузки метаданных
+        audio.addEventListener('loadedmetadata', function onMetadata() {
+            showLoadingState(false);
+            console.log('✅ Метаданные загружены, длительность:', audio.duration);
+            
+            // Автовоспроизведение если нужно
+            if (autoPlay) {
+                playTrack();
+            }
+            
+            // Удаляем обработчик после использования
+            audio.removeEventListener('loadedmetadata', onMetadata);
+        }, { once: true });
+        
+        // Обработчик ошибок загрузки
+        audio.addEventListener('error', function onError(e) {
+            console.error('❌ Ошибка загрузки аудио:', e);
+            showLoadingState(false);
+            showAudioError('Ошибка загрузки трека: ' + track.title);
+            
+            // Удаляем обработчик после использования
+            audio.removeEventListener('error', onError);
+        }, { once: true });
     }
     
     // Функция воспроизведения трека
     function playTrack() {
+        console.log('▶️ Попытка воспроизведения...');
+        
+        // Проверяем, готов ли аудио к воспроизведению
+        if (audio.readyState < 2) {
+            console.log('⚠️ Аудио еще не готово, ждем...');
+            audio.addEventListener('canplay', function onCanPlay() {
+                console.log('✅ Аудио готово к воспроизведению');
+                actuallyPlay();
+                audio.removeEventListener('canplay', onCanPlay);
+            }, { once: true });
+            return;
+        }
+        
+        actuallyPlay();
+    }
+    
+    function actuallyPlay() {
         const playPromise = audio.play();
         
         if (playPromise !== undefined) {
             playPromise.then(() => {
                 isPlaying = true;
                 updatePlayButton();
-                console.log('▶️ Воспроизведение:', tracks[currentTrackIndex].title);
+                console.log('✅ Воспроизведение:', tracks[currentTrackIndex].title);
             }).catch(e => {
                 console.log('❌ Ошибка воспроизведения:', e);
-                // Показываем пользователю сообщение
-                showAudioError();
+                showAudioError('Не удалось воспроизвести трек: ' + e.message);
+                
+                // Показываем инструкцию для пользователя
+                if (e.name === 'NotAllowedError') {
+                    showAudioError('Нажмите на кнопку воспроизведения еще раз для авторизации');
+                }
             });
         }
     }
@@ -192,10 +229,15 @@ function initMusicPlayer() {
     
     // Функция воспроизведения/паузы
     function togglePlay() {
-        if (isPlaying) {
-            pauseTrack();
+        if (audio.src && audio.readyState >= 2) {
+            if (isPlaying) {
+                pauseTrack();
+            } else {
+                playTrack();
+            }
         } else {
-            playTrack();
+            // Если трек еще не загружен, загружаем и воспроизводим
+            loadTrack(currentTrackIndex, true);
         }
     }
     
@@ -207,9 +249,11 @@ function initMusicPlayer() {
         if (isPlaying) {
             playIcon.style.display = 'none';
             pauseIcon.style.display = 'block';
+            playBtn.setAttribute('title', 'Пауза');
         } else {
             playIcon.style.display = 'block';
             pauseIcon.style.display = 'none';
+            playBtn.setAttribute('title', 'Воспроизвести');
         }
     }
     
@@ -228,7 +272,7 @@ function initMusicPlayer() {
     // Обновление прогресса
     function updateProgress() {
         const { currentTime, duration } = audio;
-        if (duration) {
+        if (duration && !isNaN(duration)) {
             const progressPercent = (currentTime / duration) * 100;
             progressFill.style.width = `${progressPercent}%`;
             
@@ -239,6 +283,8 @@ function initMusicPlayer() {
     
     // Форматирование времени
     function formatTime(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -250,21 +296,52 @@ function initMusicPlayer() {
         const clickX = e.offsetX;
         const duration = audio.duration;
         
-        if (duration) {
+        if (duration && !isNaN(duration)) {
             audio.currentTime = (clickX / width) * duration;
         }
     }
     
-    // Показать ошибку загрузки аудио
-    function showAudioError() {
-        // Можно добавить уведомление для пользователя
-        console.warn('Аудиофайлы не найдены. Убедитесь, что файлы находятся в корневой папке сайта.');
-        
-        // Демо-режим: показываем сообщение при первом клике
-        if (!localStorage.getItem('audioWarningShown')) {
-            alert('Аудиофайлы загружаются с GitHub. Для полной функциональности убедитесь, что все MP3 файлы находятся в корневой папке репозитория.');
-            localStorage.setItem('audioWarningShown', 'true');
+    // Показать/скрыть индикатор загрузки
+    function showLoadingState(show) {
+        const trackElement = tracks[currentTrackIndex]?.element;
+        if (trackElement) {
+            if (show) {
+                trackElement.classList.add('loading');
+            } else {
+                trackElement.classList.remove('loading');
+            }
         }
+    }
+    
+    // Показать ошибку
+    function showAudioError(message) {
+        console.error('Ошибка аудио:', message);
+        
+        // Создаем уведомление
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f44336;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        errorDiv.textContent = message;
+        document.body.appendChild(errorDiv);
+        
+        // Автоудаление через 5 секунд
+        setTimeout(() => {
+            if (document.body.contains(errorDiv)) {
+                document.body.removeChild(errorDiv);
+            }
+        }, 5000);
     }
     
     // События
@@ -276,7 +353,7 @@ function initMusicPlayer() {
     // Клик по треку в плейлисте
     trackItems.forEach((item, index) => {
         item.addEventListener('click', () => {
-            if (index === currentTrackIndex) {
+            if (index === currentTrackIndex && audio.src && audio.readyState >= 2) {
                 togglePlay();
             } else {
                 loadTrack(index, true);
@@ -287,9 +364,10 @@ function initMusicPlayer() {
     // События аудио
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', nextTrack);
-    audio.addEventListener('error', function(e) {
-        console.error('Ошибка загрузки аудио:', e);
-        showAudioError();
+    
+    audio.addEventListener('canplaythrough', function() {
+        console.log('✅ Аудио полностью загружено');
+        showLoadingState(false);
     });
     
     // Загрузка первого трека
@@ -298,11 +376,51 @@ function initMusicPlayer() {
     }
     
     console.log('✅ Аудио-плеер готов! Треков:', tracks.length);
+    
+    // Добавляем глобальную переменную для отладки
+    window.musicPlayer = {
+        audio: audio,
+        tracks: tracks,
+        currentTrack: () => tracks[currentTrackIndex],
+        debug: () => console.log({
+            currentTrack: tracks[currentTrackIndex],
+            isPlaying: isPlaying,
+            audioState: {
+                readyState: audio.readyState,
+                duration: audio.duration,
+                currentTime: audio.currentTime,
+                src: audio.src
+            }
+        })
+    };
 }
 
-// Добавляем стиль для активной ссылки
-const activeNavStyle = document.createElement('style');
-activeNavStyle.textContent = `
+// Добавляем стили для индикатора загрузки и улучшений
+const audioStyles = document.createElement('style');
+audioStyles.textContent = `
+    .track-item.loading {
+        position: relative;
+        opacity: 0.7;
+        background: #f5f5f5 !important;
+    }
+    
+    .track-item.loading::after {
+        content: '⏳';
+        position: absolute;
+        right: 40px;
+        animation: spin 1s linear infinite;
+        font-size: 12px;
+    }
+    
+    .track-item.active.loading::after {
+        color: white;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
     .nav-link.active {
         opacity: 1;
     }
@@ -311,11 +429,17 @@ activeNavStyle.textContent = `
         width: 100%;
     }
     
-    /* Индикатор загрузки для аудио */
-    .loading-audio::after {
-        content: ' (загрузка...)';
-        font-size: 0.8em;
-        opacity: 0.7;
+    /* Улучшаем визуальную обратную связь */
+    .track-item {
+        transition: all 0.2s ease;
+    }
+    
+    .track-item:active {
+        transform: scale(0.98);
+    }
+    
+    .control-btn:active {
+        transform: scale(0.9);
     }
 `;
-document.head.appendChild(activeNavStyle);
+document.head.appendChild(audioStyles);
