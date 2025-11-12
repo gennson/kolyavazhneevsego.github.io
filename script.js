@@ -125,39 +125,52 @@ function initMusicPlayer() {
         duration: item.querySelector('.track-duration').textContent
     }));
     
-    // Функция загрузки трека
     function loadTrack(index, autoPlay = false) {
-        if (index < 0 || index >= tracks.length) return;
-        
-        currentTrackIndex = index;
-        const track = tracks[index];
-        
-        // Пауза текущего трека
-        audio.pause();
-        isPlaying = false;
-        updatePlayButton();
-        
-        // Загрузка нового трека
-        audio.src = track.src;
-        trackTitle.textContent = track.title;
-        trackArtist.textContent = track.artist;
-        timeTotal.textContent = track.duration;
-        
-        // Обновляем активный класс
-        trackItems.forEach(item => item.classList.remove('active'));
-        track.element.classList.add('active');
-        
-        // Сбрасываем прогресс
-        progressFill.style.width = '0%';
-        timeCurrent.textContent = '0:00';
-        
-        // Автовоспроизведение если нужно
-        if (autoPlay) {
-            playTrack();
-        }
-        
-        console.log('🎵 Загружен трек:', track.title);
+    if (index < 0 || index >= tracks.length) return;
+    
+    currentTrackIndex = index;
+    const track = tracks[index];
+    
+    // Пауза текущего трека
+    audio.pause();
+    isPlaying = false;
+    updatePlayButton();
+    
+    // ЗАМЕНИ ЭТУ ЧАСТЬ:
+    // Загрузка нового трека с обработкой CORS
+    audio.crossOrigin = "anonymous"; // Добавляем CORS
+    audio.src = track.src;
+    
+    // Добавляем обработчики ошибок
+    audio.addEventListener('error', function(e) {
+        console.error('❌ Ошибка загрузки аудио:', e);
+        console.error('Файл:', track.src);
+        alert('Ошибка загрузки аудио. Проверьте консоль для деталей.');
+    });
+    
+    audio.addEventListener('canplaythrough', function() {
+        console.log('✅ Аудио готово к воспроизведению:', track.title);
+    });
+    
+    trackTitle.textContent = track.title;
+    trackArtist.textContent = track.artist;
+    timeTotal.textContent = track.duration;
+    
+    // Обновляем активный класс
+    trackItems.forEach(item => item.classList.remove('active'));
+    track.element.classList.add('active');
+    
+    // Сбрасываем прогресс
+    progressFill.style.width = '0%';
+    timeCurrent.textContent = '0:00';
+    
+    // Автовоспроизведение если нужно
+    if (autoPlay) {
+        playTrack();
     }
+    
+    console.log('🎵 Загружен трек:', track.title, 'Путь:', track.src);
+}
     
     // Функция воспроизведения трека
     function playTrack() {
